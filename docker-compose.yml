@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==========================================
   # 🗄️ DATABASE SERVICE (PostgreSQL)
@@ -18,7 +16,7 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database:/docker-entrypoint-initdb.d
 
     # 🚨 HEALTHCHECK: เช็คว่า Database พร้อมรับ Query จริงๆ หรือยัง
     healthcheck:
