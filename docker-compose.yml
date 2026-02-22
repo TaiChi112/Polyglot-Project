@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 🗄️ DATABASE SERVICE (PostgreSQL)
+  # ==========================================
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: polyglot_postgres
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    # 🚨 HEALTHCHECK: เช็คว่า Database พร้อมรับ Query จริงๆ หรือยัง
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # ⚙️ BACKEND SERVICES
+  # ==========================================
+  backend-fiber:
+    build: 
+      context: ./backend-fiber
+    container_name: service_fiber
+    env_file:
+      - .env
+    ports:
+      - "${PORT_FIBER}:4001"
+    # 🚨 DEPENDS_ON: รอให้ Database "Healthy" ก่อน ค่อยรัน Service นี้
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  backend-actix:
+    build: 
+      context: ./backend-actix
+    container_name: service_actix
+    env_file:
+      - .env
+    ports:
+      - "${PORT_ACTIX}:4003"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  backend-fastapi:
+    build: 
+      context: ./backend-fastapi
+    container_name: service_fastapi
+    env_file:
+      - .env
+    ports:
+      - "${PORT_FASTAPI}:4002"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    
+  backend-elysia:
+    build: 
+      context: ./backend-elysia
+    container_name: service_elysia
+    env_file:
+      - .env
+    ports:
+      - "${PORT_ELYSIA}:4000"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # (คุณสามารถเพิ่ม backend-fastapi และ backend-elysia ด้วยโครงสร้างเดียวกันกับด้านบนได้เลยครับ)
+
+  # ==========================================
+  # 🌐 FRONTEND SERVICE
+  # ==========================================
+  frontend-nextjs:
+    build: 
+      context: ./frontend-nextjs
+    container_name: service_nextjs
+    env_file:
+      - .env
+    ports:
+      - "${PORT_FRONTEND}:3000"
+    # Frontend ควรจะรอให้ API Gateway (Elysia) พร้อมก่อน
+    depends_on:
+      - backend-elysia
+
+volumes:
+  pgdata: # ประกาศ Volume สำหรับเก็บข้อมูล Database ไม่ให้หายเมื่อปิด Container
