@@ -4,10 +4,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
+# 🚨 เพิ่มบรรทัดนี้: อัปเดตแผนที่ (PATH) ให้ Stage Builder รู้จัก uvicorn
+ENV PATH=/root/.local/bin:$PATH
+
 # Stage 2: Runner
 FROM python:3.11-slim
 WORKDIR /app
-# ก๊อปปี้เฉพาะไลบรารีที่ลงเสร็จแล้วมา
 COPY --from=builder /root/.local /root/.local
 COPY . .
 ENV PATH=/root/.local/bin:$PATH
