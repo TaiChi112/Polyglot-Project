@@ -18,7 +18,7 @@ services:
     volumes:
       - ./backend-elysia:/app
       - /app/node_modules
-    command: ["bun", "run", "--hot", "src/index.ts"]
+    command: ["sh", "-c", "bun install && bunx prisma generate && bun run --hot src/index.ts"]
 
   # ==========================================
   # ⚛️ Next.js Frontend (Hot Reload)
@@ -34,6 +34,8 @@ services:
       - HOST=0.0.0.0
       - HOSTNAME=0.0.0.0
       - PORT=3000
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
     command: ["sh", "-c", "bun install && bun run dev"]
 
   # ==========================================
