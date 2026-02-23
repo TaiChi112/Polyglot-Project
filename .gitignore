@@ -74,3 +74,4 @@ Cargo.lock
 .DS_Store
 *.pem
 .bun
+bun.lock
